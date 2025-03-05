@@ -1,6 +1,7 @@
 from requests import get
 from bs4 import BeautifulSoup
 import target
+from urllib.parse import urljoin  # 用於處理相對網址
 
 headers = {
     "content-type": "text/html; charset=utf-8",
@@ -8,14 +9,19 @@ headers = {
 }
 
 for site in target.sites:
-    print(site["school"])
+    print(f"正在解析: {site['school']} ({site['url']})")
+    
     response = get(site["url"], headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    title_list = soup.select(".card-title a[title]")
-    for events in title_list:
-        title = events["title"]
-        link = events["href"]
-        print(title, "https://csie.yuntech.edu.tw" + link)
+    extracted_data = []
     
+    title_list = soup.select(site["selector"])
+    for event in title_list:
+        title = event.get("title", "").strip() or event.text.strip()
+        link = urljoin(site["url"], event.get("href", ""))
+        extracted_data.append((title, link))
+    
+    for title, link in extracted_data:
+        print(f"{title} → {link}")
 
