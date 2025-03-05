@@ -1,7 +1,15 @@
 from requests import get
 from bs4 import BeautifulSoup
 import target
-from urllib.parse import urljoin  # 用於處理相對網址
+from urllib.parse import urljoin
+import sqlite3
+
+# Connect to database
+conn = sqlite3.connect('database.db')
+cursor = conn.cursor()
+
+cursor.execute("SELECT * FROM admin")
+print(cursor.fetchall())
 
 headers = {
     "content-type": "text/html; charset=utf-8",
@@ -24,4 +32,4 @@ for site in target.sites:
     
     for title, link in extracted_data:
         print(f"{title} → {link}")
-
+    
