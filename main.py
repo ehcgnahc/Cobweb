@@ -8,8 +8,16 @@ import sqlite3
 conn = sqlite3.connect('database.db')
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin")
-print(cursor.fetchall())
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS events (
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        School TEXT NOT NULL,
+        Title TEXT NOT NULL,
+        Link TEXT NOT NULL
+    )
+    """
+)
 
 headers = {
     "content-type": "text/html; charset=utf-8",
@@ -28,7 +36,11 @@ for site in target.sites:
     for event in title_list:
         title = event.get("title", "").strip() or event.text.strip()
         link = urljoin(site["url"], event.get("href", ""))
+        
+        cursor.execute("INSERT INTO events (School, Title, Link) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM events WHERE School = ? AND LINK = ?)", (site["school"], title, link, site["school"], link))
         extracted_data.append((title, link))
+    
+    conn.commit()
     
     for title, link in extracted_data:
         print(f"{title} → {link}")
