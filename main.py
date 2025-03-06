@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 import sqlite3
 import re
 import target
+import functions
 
 def setup_database(database):
     conn = sqlite3.connect(database)
@@ -14,8 +15,10 @@ def setup_database(database):
         CREATE TABLE IF NOT EXISTS events (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
             School TEXT NOT NULL,
-            Title TEXT NOT NULL,
-            Link TEXT NOT NULL
+            Title TEXT UNIQUE NOT NULL,
+            Title_Simplified TEXT UNIQUE NOT NULL,
+            Link TEXT NOT NULL,
+            UNIQUE (School, Link)
         )
         """
     )
@@ -34,24 +37,26 @@ def get_events(site, headers):
     title_list = soup.select(site["selector"])
     for event in title_list:
         title = event.get("title", "").strip() or event.text.strip()
+        title_simplified = functions.simplify_text(title)
         link = urljoin(site["url"], event.get("href", ""))
         # title = re.sub(r"(\*\*|__)(.*?)\1", "r\1", title)
         
-        events.append((site["school"], title, link))
+        events.append((site["school"], title, title_simplified, link))
     
     return events
 
 def save_events_to_database(cursor, conn, events):
-    for school, title, link in events:
-        cursor.execute(
-            """
-            INSERT INTO events (School, Title, Link)
-            SELECT ?, ?, ? WHERE NOT EXISTS (
-                SELECT 1 FROM events WHERE School = ? AND LINK = ?
+    for school, title, title_simplified, link in events:
+        try:
+            cursor.execute(
+                """
+                INSERT INTO events (School, Title, Title_Simplified, Link)
+                VALUES (?, ?, ?, ?)
+                """,
+                (school, title, title_simplified, link)
             )
-            """
-            , (school, title, link, school, link)
-        )
+        except sqlite3.IntegrityError:
+            print(f"資料已存在: {school, title}")
     conn.commit()
 
 def main():
