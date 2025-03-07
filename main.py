@@ -4,9 +4,8 @@ import target
 import functions
 from requests import get
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QTableWidget, QTableWidgetItem, QMessageBox
-from PyQt5.QtCore import Qt
+from urllib import parse
+from PyQt5 import QtWidgets
 
 def setup_database(database, blacklist):
     database_conn = sqlite3.connect(database)
@@ -56,7 +55,7 @@ def get_events(site, headers):
     for event in title_list:
         title = event.get("title", "").strip() or event.text.strip()
         title_simplified = functions.normalize_text(title)
-        link = urljoin(site["url"], event.get("href", ""))
+        link = parse.urljoin(site["url"], event.get("href", ""))
         # title = re.sub(r"(\*\*|__)(.*?)\1", "r\1", title)
         
         events.append((site["school"], title, title_simplified, link))
@@ -78,14 +77,36 @@ def save_events_to_database(database_conn, database_cursor, blacklist_conn, blac
     database_conn.commit()
 
 
-class App(QWidget):
+class App(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.initUI()
+        self.setObjectName("MainWindow")
+        self.setWindowTitle('CobWeb')
+        self.resize(600, 400)
+        self.setStyleSheet("#MainWindow { background-color: #fcc; }")
+        self.selection_box = self.Selection_Box()
+        self.info = self.INFO()
 
-    def initUI(self):
-        self.setWindowTitle("AMONGUS")
-        self.setGeometry(100, 100, 800, 600)
+    def Selection_Box(self):
+        selection_box = QtWidgets.QComboBox(self)
+        selection_box.addItem("請選擇學校")
+        selection_box.addItem("ALL")
+        for site in target.sites: 
+            selection_box.addItem(site['school'])
+        selection_box.setGeometry(10, 10, 200, 30)
+        selection_box.move(50, 50)
+        selection_box.currentIndexChanged.connect(self.Selection_Changed)
+        return selection_box
+    
+    def INFO(self):
+        info = QtWidgets.QLabel(self)
+        info.move(200, 100)
+        info.setText(self.selection_box.currentText())
+        info.setStyleSheet("color: #00c; font-size: 20px;")
+        return info
+
+    def Selection_Changed(self):
+        self.info.setText(self.selection_box.currentText())
 
 def main():
     try:
@@ -106,4 +127,8 @@ def main():
         print(f"未成功連接到Database: {e}")
     
 if __name__ == "__main__":
-    main()
+    # main()
+    app = QtWidgets.QApplication(sys.argv)
+    Window = App()
+    Window.show()
+    sys.exit(app.exec_())
