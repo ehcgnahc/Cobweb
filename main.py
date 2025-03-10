@@ -3,10 +3,13 @@ import main as main_module
 import target
 import config
 
+database_path = 'data/database.db'
+blacklist_path = 'data/blacklist.db'
+
 def main():
     try:
         database_conn, database_cursor, blacklist_conn, blacklist_cursor = main_module.setup_database(
-            'data/database.db', 'data/blacklist.db'
+            database_path, blacklist_path
         )
 
         for site in target.sites:
@@ -30,7 +33,7 @@ def main():
         print(f"未成功連接到 Database: {e}")
 
 if __name__ == "__main__":
-    if "--nogui" in sys.argv:
-        main()
-    else:
-        main_module.launch_gui()
+    main()
+    main_module.launch_gui(
+        database_path, blacklist_path
+    )
