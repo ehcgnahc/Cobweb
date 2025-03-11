@@ -1,4 +1,3 @@
-import sys
 import main as main_module
 import target
 import config

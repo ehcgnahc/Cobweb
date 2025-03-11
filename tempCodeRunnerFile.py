@@ -1,2 +1,2 @@
-
-#     print(table)
+:
+    print(table)

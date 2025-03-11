@@ -34,6 +34,7 @@ class App(QtWidgets.QWidget):
         info.move(200, 100)
         info.resize(800, 600)
         info.setStyleSheet("color: #00c; font-size: 20px;")
+        info.clicked.connect(lambda: self.link_clicked())
         return info
 
     def selection_changed(self):
@@ -56,13 +57,35 @@ class App(QtWidgets.QWidget):
             if results:
                 for row in results:
                     school, title, title_simplified, link = row
-                    self.info.addItem(f"🏫 {school}\n📌 {title} ({title_simplified})\n🔗 {link}\n")
+                    item = QtWidgets.QListWidgetItem(f"🏫 {school}\n📌 {title}\n")
+                    self.info.addItem(item)
             else:
                 self.info.addItem("查無資料")
 
         except Exception as e:
             self.info.addItem(f"發生錯誤: {e}")
 
+    def link_clicked(self):
+        selected_school = self.info.currentItem().text().split("\n")[0][2:]
+        selected_title = self.info.currentItem().text().split("\n")[1][2:]
+        # print(selected_school)
+        # print(selected_title)
+        
+        try:
+            cursor = self.database_conn.cursor()
+            
+            cursor.execute("SELECT Link FROM events WHERE School = ? AND Title = ?", (selected_school, selected_title))
+            result = cursor.fetchone()
+            if result:
+                link = result[0]
+                QtWidgets.QMessageBox.information(self, "活動連結", f"即將前往:\n{selected_school} - {selected_title}\n{link}")
+                # webbrowser.open(link)
+            else:
+                QtWidgets.QMessageBox.warning(self, "錯誤", "查無連結")
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self, "錯誤", f"發生錯誤: {e}")
+        
+    
 def launch_gui(database_path, blacklist_path):
     database_conn = sqlite3.connect(database_path)
     
