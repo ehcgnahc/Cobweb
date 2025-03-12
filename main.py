@@ -32,7 +32,7 @@ def main():
         print(f"未成功連接到 Database: {e}")
 
 if __name__ == "__main__":
-    main()
+    # main()
     main_module.launch_gui(
-        database_path, blacklist_path
+        database_path, blacklist_path, config.mode
     )

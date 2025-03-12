@@ -1,6 +1,8 @@
-from PyQt5 import QtWidgets
-import target
+from PyQt5 import QtWidgets, QtGui, QtCore
+import os
+import sys
 import sqlite3
+import target
 
 class App(QtWidgets.QWidget):
     def __init__(self, database_conn):
@@ -9,11 +11,39 @@ class App(QtWidgets.QWidget):
         self.setWindowTitle('CobWeb')
         self.resize(600, 400)
         self.setStyleSheet("#MainWindow { background-color: #fcc; }")
-
+        
+        self.initTray()
         self.database_conn = database_conn
-        self.selection_box = self.create_selection_box()
+        self.mode = "interactive"
         self.info = self.show_info()
+        
+        if self.mode == "interactive":
+            self.selection_box = self.create_selection_box()
+            # self.info.setDisabled(False)
+        else:
+            self.selection_box = None
+            self.load_events()
+            # self.info.setDisabled(True)
 
+    def initTray(self):
+        show = QtWidgets.QAction("Show", self, triggered=self.show) #　顯示
+        background = QtWidgets.QAction("Background", self, triggered=self.lower) # 背景
+        quit = QtWidgets.QAction("Quit", self, triggered=self.close) # 關閉
+        
+        self.tray_menu = QtWidgets.QMenu()
+        self.tray_menu.addAction(show)
+        self.tray_menu.addAction(background)
+        self.tray_menu.addAction(quit)
+
+        icon = os.path.join("icon.png")
+        
+        self.tray_icon = QtWidgets.QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QtGui.QIcon(icon))
+        self.tray_icon.setContextMenu(self.tray_menu)
+        self.tray_icon.show()
+        
+        
+        
     def create_selection_box(self):
         selection_box = QtWidgets.QComboBox(self)
         selection_box.addItem("請選擇學校")
@@ -25,7 +55,7 @@ class App(QtWidgets.QWidget):
         selection_box.setGeometry(10, 10, 200, 30)
         selection_box.move(50, 50)
         
-        selection_box.currentIndexChanged.connect(lambda: self.selection_changed())
+        selection_box.currentIndexChanged.connect(lambda: self.load_events())
 
         return selection_box
     
@@ -34,12 +64,19 @@ class App(QtWidgets.QWidget):
         info.move(200, 100)
         info.resize(800, 600)
         info.setStyleSheet("color: #00c; font-size: 20px;")
-        info.clicked.connect(lambda: self.link_clicked())
+        
+        if self.mode == "interactive":
+            info.clicked.connect(lambda: self.link_clicked())
+        
         return info
 
-    def selection_changed(self):
-        selected_school = self.selection_box.currentText()
+    def load_events(self):
         self.info.clear()
+        
+        if self.selection_box is None:
+            selected_school = "ALL"
+        else:
+            selected_school = self.selection_box.currentText()
 
         if selected_school == "請選擇學校":
             return
