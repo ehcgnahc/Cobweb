@@ -34,5 +34,5 @@ def main():
 if __name__ == "__main__":
     # main()
     main_module.launch_gui(
-        database_path, blacklist_path, config.mode
+        database_path, blacklist_path
     )

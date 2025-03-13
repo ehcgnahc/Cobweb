@@ -1,4 +1,6 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
+from ctypes import windll
+import win32gui, win32con
 import os
 import sys
 import sqlite3
@@ -12,26 +14,33 @@ class App(QtWidgets.QWidget):
         self.resize(600, 400)
         self.setStyleSheet("#MainWindow { background-color: #fcc; }")
         
+        self.desktop_hwnd = win32gui.GetDesktopWindow()
+        self.mode = "show"
         self.initTray()
+        self.raise_
         self.database_conn = database_conn
-        self.mode = "interactive"
         self.info = self.show_info()
+        self.selection_box = self.create_selection_box()
+        self.load_events()
         
-        if self.mode == "interactive":
-            self.selection_box = self.create_selection_box()
-            # self.info.setDisabled(False)
-        else:
-            self.selection_box = None
-            self.load_events()
-            # self.info.setDisabled(True)
-
+        self.desktop_timer = QtCore.QTimer(self)
+        self.desktop_timer.timeout.connect(self.check_desktop)
+        self.desktop_timer.start(500)
+        # self.info.setDisabled(True)
+        
     def initTray(self):
-        show = QtWidgets.QAction("Show", self, triggered=self.show) #　顯示
-        background = QtWidgets.QAction("Background", self, triggered=self.lower) # 背景
-        quit = QtWidgets.QAction("Quit", self, triggered=self.close) # 關閉
+        show = QtWidgets.QAction("Show", self) #　顯示
+        hide = QtWidgets.QAction("Hide", self) # 隱藏
+        background = QtWidgets.QAction("Background", self) # 背景
+        quit = QtWidgets.QAction("Quit", self, triggered = self.close) # 關閉
+        
+        show.triggered.connect(self.show_window)
+        hide.triggered.connect(self.hide_window)
+        background.triggered.connect(self.background_window)
         
         self.tray_menu = QtWidgets.QMenu()
         self.tray_menu.addAction(show)
+        self.tray_menu.addAction(hide)
         self.tray_menu.addAction(background)
         self.tray_menu.addAction(quit)
 
@@ -41,8 +50,31 @@ class App(QtWidgets.QWidget):
         self.tray_icon.setIcon(QtGui.QIcon(icon))
         self.tray_icon.setContextMenu(self.tray_menu)
         self.tray_icon.show()
-        
-        
+    
+    def show_window(self):
+        self.show()
+        self.raise_()
+        self.mode = "show"
+        self.selection_box.setDisabled(False)
+    
+    def hide_window(self):
+        self.hide()
+        self.mode = "hide"
+    
+    def background_window(self):
+        self.lower()
+        self.mode = "background"
+        self.selection_box.setDisabled(True)
+    
+    def check_desktop(self):
+        if self.mode == "background":
+            current_hwnd = int(self.winId())
+            print(f"current_hwnd: {current_hwnd}, desktop_hwnd: {self.desktop_hwnd}")
+            if current_hwnd == self.desktop_hwnd:
+                self.show()
+                self.raise_()
+            else:
+                self.hide()
         
     def create_selection_box(self):
         selection_box = QtWidgets.QComboBox(self)
@@ -65,7 +97,7 @@ class App(QtWidgets.QWidget):
         info.resize(800, 600)
         info.setStyleSheet("color: #00c; font-size: 20px;")
         
-        if self.mode == "interactive":
+        if self.mode == "show":
             info.clicked.connect(lambda: self.link_clicked())
         
         return info
