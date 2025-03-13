@@ -14,6 +14,7 @@ def setup_database(database_path, blacklist_path):
             Title TEXT UNIQUE NOT NULL,
             Title_Simplified TEXT UNIQUE NOT NULL,
             Link TEXT NOT NULL,
+            Post_Date TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (School, Link)
         )
         """
@@ -27,6 +28,7 @@ def setup_database(database_path, blacklist_path):
             Title TEXT UNIQUE NOT NULL,
             Title_Simplified TEXT UNIQUE NOT NULL,
             Link TEXT NOT NULL,
+            Post_Date TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (School, Link)
         )
         """

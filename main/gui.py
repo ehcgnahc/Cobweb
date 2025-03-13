@@ -11,10 +11,9 @@ class App(QtWidgets.QWidget):
         super().__init__()
         self.setObjectName("MainWindow")
         self.setWindowTitle('CobWeb')
-        self.resize(600, 400)
+        self.resize(800, 320)
         self.setStyleSheet("#MainWindow { background-color: #fcc; }")
         
-        self.desktop_hwnd = win32gui.GetDesktopWindow()
         self.mode = "show"
         self.initTray()
         self.raise_
@@ -25,31 +24,55 @@ class App(QtWidgets.QWidget):
         
         self.desktop_timer = QtCore.QTimer(self)
         self.desktop_timer.timeout.connect(self.check_desktop)
-        self.desktop_timer.start(500)
+        self.desktop_timer.start(100)
         # self.info.setDisabled(True)
         
     def initTray(self):
+        icon = os.path.join("icon.png")
+        head = QtWidgets.QAction("CobWeb", self) # 標題
         show = QtWidgets.QAction("Show", self) #　顯示
         hide = QtWidgets.QAction("Hide", self) # 隱藏
         background = QtWidgets.QAction("Background", self) # 背景
         quit = QtWidgets.QAction("Quit", self, triggered = self.close) # 關閉
         
+        head.setIcon(QtGui.QIcon(icon))
+        head.setDisabled(True)
         show.triggered.connect(self.show_window)
         hide.triggered.connect(self.hide_window)
         background.triggered.connect(self.background_window)
         
         self.tray_menu = QtWidgets.QMenu()
+        self.tray_menu.addAction(head)
+        self.tray_menu.addSeparator()
         self.tray_menu.addAction(show)
         self.tray_menu.addAction(hide)
-        self.tray_menu.addAction(background)
+        # self.tray_menu.addAction(background)
         self.tray_menu.addAction(quit)
-
-        icon = os.path.join("icon.png")
         
-        self.tray_icon = QtWidgets.QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QtGui.QIcon(icon))
-        self.tray_icon.setContextMenu(self.tray_menu)
-        self.tray_icon.show()
+        self.tray_menu.setStyleSheet("""
+            QMenu {
+                background-color: rgb(31, 31, 31);
+                color: rgba(255, 255, 255, 0.92);
+                padding: 2px 5px
+            }
+            QMenu::item {
+                padding: 8px 25px
+            }
+            QMenu::item:selected {
+                background-color: rgba(93, 93, 93, 0.2);
+            }
+            QMenu::separator {
+                background-color: rgba(155, 155, 155, 0.5);
+                height: 1px;
+                margin: 5px 0px 5px 0px;
+            }
+        """)
+        
+        self.tray = QtWidgets.QSystemTrayIcon(self)
+        self.tray.setToolTip("CobWeb")
+        self.tray.setIcon(QtGui.QIcon(icon))
+        self.tray.setContextMenu(self.tray_menu)
+        self.tray.show()
     
     def show_window(self):
         self.show()
@@ -68,13 +91,17 @@ class App(QtWidgets.QWidget):
     
     def check_desktop(self):
         if self.mode == "background":
-            current_hwnd = int(self.winId())
-            print(f"current_hwnd: {current_hwnd}, desktop_hwnd: {self.desktop_hwnd}")
-            if current_hwnd == self.desktop_hwnd:
-                self.show()
-                self.raise_()
-            else:
-                self.hide()
+            self.lower()
+            # desktop_hwnd = win32gui.GetDesktopWindow()
+            # current_hwnd = win32gui.GetForegroundWindow()
+            # desktop_text = windll.user32.GetWindowTextW(desktop_hwnd)
+            # current_text = windll.user32.GetWindowTextW(current_hwnd)
+            # print(f"current_hwnd: {current_hwnd}, current_text: {current_text}, desktop_hwnd: {desktop_hwnd}, desktop_text: {desktop_text}")
+            # if current_hwnd == desktop_hwnd:
+            #     self.show()
+            #     self.raise_()
+            # else:
+            #     self.hide()
         
     def create_selection_box(self):
         selection_box = QtWidgets.QComboBox(self)
@@ -85,7 +112,7 @@ class App(QtWidgets.QWidget):
             selection_box.addItem(site['school'])
 
         selection_box.setGeometry(10, 10, 200, 30)
-        selection_box.move(50, 50)
+        selection_box.move(5, 5)
         
         selection_box.currentIndexChanged.connect(lambda: self.load_events())
 
@@ -93,8 +120,8 @@ class App(QtWidgets.QWidget):
     
     def show_info(self):
         info = QtWidgets.QListWidget(self)
-        info.move(200, 100)
-        info.resize(800, 600)
+        info.move(10, 40)
+        info.resize(800, 300)
         info.setStyleSheet("color: #00c; font-size: 20px;")
         
         if self.mode == "show":
@@ -117,16 +144,30 @@ class App(QtWidgets.QWidget):
             cursor = self.database_conn.cursor()
 
             if selected_school == "ALL":
-                cursor.execute("SELECT School, Title, Title_Simplified, Link FROM events ORDER BY ID ASC")
+                cursor.execute(
+                    """
+                    SELECT School, Title, Title_Simplified, Link, Post_Date
+                    FROM events
+                    ORDER BY Post_Date DESC, ID ASC
+                    """
+                )
             else:
-                cursor.execute("SELECT School, Title, Title_Simplified, Link FROM events WHERE School = ? ORDER BY ID ASC", (selected_school,))
+                cursor.execute(
+                    """
+                    SELECT School, Title, Title_Simplified, Link, Post_Date
+                    FROM events
+                    WHERE School = ?
+                    ORDER BY Post_Date DESC, ID ASC
+                    """,
+                    (selected_school,)
+                )
 
             results = cursor.fetchall()
 
             if results:
                 for row in results:
-                    school, title, title_simplified, link = row
-                    item = QtWidgets.QListWidgetItem(f"🏫 {school}\n📌 {title}\n")
+                    school, title, title_simplified, link, post_date = row
+                    item = QtWidgets.QListWidgetItem(f"{post_date[:10]}\n🏫 {school}\n📌 {title}\n")
                     self.info.addItem(item)
             else:
                 self.info.addItem("查無資料")
@@ -135,15 +176,22 @@ class App(QtWidgets.QWidget):
             self.info.addItem(f"發生錯誤: {e}")
 
     def link_clicked(self):
-        selected_school = self.info.currentItem().text().split("\n")[0][2:]
-        selected_title = self.info.currentItem().text().split("\n")[1][2:]
+        selected_school = self.info.currentItem().text().split("\n")[1][2:]
+        selected_title = self.info.currentItem().text().split("\n")[2][2:]
         # print(selected_school)
         # print(selected_title)
         
         try:
             cursor = self.database_conn.cursor()
             
-            cursor.execute("SELECT Link FROM events WHERE School = ? AND Title = ?", (selected_school, selected_title))
+            cursor.execute(
+                """
+                SELECT Link
+                FROM events
+                WHERE School = ? AND Title = ?
+                """,
+                (selected_school, selected_title)
+            )
             result = cursor.fetchone()
             if result:
                 link = result[0]

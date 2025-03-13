@@ -6,7 +6,7 @@ import functions
 def get_events(site, headers):
     print(f"正在解析: {site['school']} ({site['url']})")
     
-    response = get(site["url"], headers=headers)
+    response = get(site["url"], headers=headers, timeout=5)
     soup = BeautifulSoup(response.text, 'html.parser')
 
     events = []
