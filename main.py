@@ -50,7 +50,7 @@ def check_schedule():
 if __name__ == "__main__":
     update_data()
     
-    schedule.every(1).minutes.do(update_data)
+    schedule.every(1).hours.do(update_data)
     threading.Thread(target=check_schedule, daemon=True).start()
     
     main_module.launch_gui(

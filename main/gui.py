@@ -1,8 +1,9 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from ctypes import windll
-import win32gui, win32con
 import os
 import sys
+import win32gui, win32con
+import webbrowser
 import sqlite3
 import target
 
@@ -112,7 +113,7 @@ class App(QtWidgets.QWidget):
             selection_box.addItem(site['school'])
 
         selection_box.setGeometry(10, 10, 200, 30)
-        selection_box.move(5, 5)
+        selection_box.move(2, 2)
         
         selection_box.currentIndexChanged.connect(lambda: self.load_events())
 
@@ -120,7 +121,7 @@ class App(QtWidgets.QWidget):
     
     def show_info(self):
         info = QtWidgets.QListWidget(self)
-        info.move(10, 40)
+        info.move(2, 33)
         info.resize(800, 300)
         info.setStyleSheet("color: #00c; font-size: 20px;")
         
@@ -195,8 +196,9 @@ class App(QtWidgets.QWidget):
             result = cursor.fetchone()
             if result:
                 link = result[0]
-                QtWidgets.QMessageBox.information(self, "活動連結", f"即將前往:\n{selected_school} - {selected_title}\n{link}")
-                # webbrowser.open(link)
+                reply = QtWidgets.QMessageBox.question(self, "活動連結", f"即將前往:\n{selected_school} - {selected_title}", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+                if reply == QtWidgets.QMessageBox.Yes:
+                    webbrowser.open(link)
             else:
                 QtWidgets.QMessageBox.warning(self, "錯誤", "查無連結")
         except Exception as e:
