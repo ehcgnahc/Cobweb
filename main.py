@@ -24,6 +24,7 @@ def update_data():
             except requests.exceptions.RequestException as e:
                 print(f"爬取 {site['school']} 發生連線錯誤：{e}，跳過。")
                 continue
+            
             for school, title, title_simplified, link in events:
                 try:
                     database_cursor.execute(
@@ -33,9 +34,10 @@ def update_data():
                         """,
                         (school, title, title_simplified, link)
                     )
+                    print(f"已新增 {school} - {title} ({title_simplified})")
                 except Exception:
-                    print(f"資料已存在: {school, title}")
-
+                    continue
+            
         database_conn.commit()
         database_conn.close()
 
@@ -48,8 +50,6 @@ def check_schedule():
         time.sleep(1)
 
 if __name__ == "__main__":
-    update_data()
-    
     schedule.every(1).hours.do(update_data)
     threading.Thread(target=check_schedule, daemon=True).start()
     

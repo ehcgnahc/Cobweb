@@ -8,6 +8,7 @@ import sqlite3
 import target
 
 class App(QtWidgets.QWidget):
+    
     def __init__(self, database_conn):
         super().__init__()
         self.setObjectName("MainWindow")
@@ -211,6 +212,9 @@ def launch_gui(database_path, blacklist_path):
     app = QtWidgets.QApplication([])
     window = App(database_conn)
     window.show()
+    update_timer = QtCore.QTimer(window)
+    update_timer.timeout.connect(window.load_events)
+    update_timer.start(3660000) #1 hour and 1 minute
     app.exec_()
     
     database_conn.close()

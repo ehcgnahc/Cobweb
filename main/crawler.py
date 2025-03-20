@@ -17,7 +17,7 @@ def get_events(site, headers):
         title_simplified = functions.normalize_text(title)
         link = parse.urljoin(site["url"], event.get("href", ""))
         
-        print (title, link)
+        # print (title, link)
         events.append((site["school"], title, title_simplified, link))
     
     return events
