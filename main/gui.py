@@ -110,8 +110,12 @@ class App(QtWidgets.QWidget):
         selection_box.addItem("請選擇學校")
         selection_box.addItem("ALL")
 
+        schools = []
+        
         for site in target.sites:
-            selection_box.addItem(site['school'])
+            if site['school'] not in schools:
+                schools.append(site['school'])
+                selection_box.addItem(site['school'])
 
         selection_box.setGeometry(10, 10, 200, 30)
         selection_box.move(2, 2)
